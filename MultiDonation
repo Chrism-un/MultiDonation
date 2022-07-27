@@ -1,0 +1,43 @@
+pragma solidity ^0.6.6; 
+
+contract multidonation {
+    address public avocat;
+    address payable public beneficiaire;
+    uint public tropTot; 
+    
+    uint public montant;
+    uint constant public NB_ENCAISSEMENTS = 10; // Constant : variable fixe tout au long du programme
+    uint constant public INTERVALLE = 5; // Encaissement tout les 5 secondes. 
+    uint public SommeEncaissement; // LA SOMME DES ENCAISSEMENTS
+    
+    
+    constructor (address _avocat, address payable _beneficiaire, uint delai) payable public 
+        {
+            avocat = _avocat;
+           beneficiaire = _beneficiaire;
+            tropTot = now + delai;
+            montant = msg.value / NB_ENCAISSEMENTS; // On va envoyer 1/10ème du montant par 5sec.
+        }
+    
+    
+    
+    function withdraw() public { // Permet de faire le virement. 
+    
+                require(msg.sender == beneficiaire); // Donner l'exclusivité dU transfert de fond AU beneficiaire.
+                require (now >= tropTot);
+                require (SommeEncaissement < NB_ENCAISSEMENTS);
+                
+                uint EncaissementsValides = (now - tropTot) / INTERVALLE;
+                uint resteEncaissement = EncaissementsValides - SommeEncaissement;
+                
+                // Pour vérifier que le resteEncaissement et la SommeEncaissement ne dépassent pas le nombre d'Encaissement
+                if (resteEncaissement + SommeEncaissement > NB_ENCAISSEMENTS){
+                    resteEncaissement = NB_ENCAISSEMENTS - SommeEncaissement;
+                }
+                else {
+                    resteEncaissement = resteEncaissement;
+                }
+                SommeEncaissement += resteEncaissement; // SommeEncaissement qui s'incrémente en même temmps que resteEncaissement qui s'incrémente 
+                beneficiaire.transfer(resteEncaissement * montant);
+    }
+}
